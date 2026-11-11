@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { CheckCircle2, ArrowRight, Calendar, Award, Sparkles, ChevronRight, MapPin } from 'lucide-react';
+import { CheckCircle2, ArrowRight, Calendar, Award, Sparkles, ChevronRight, MapPin, Users, Ruler, Building2, Box, HardHat } from 'lucide-react';
 import { motion, useScroll, useTransform, useReducedMotion } from 'motion/react';
 import { ABOUT_DETAILS, COMPANY_INFO, GALLERY_PROJECTS } from '../data/websiteData';
 import { Reveal, StaggerGroup, StaggerItem, Magnetic, SplitText } from './Effects';
@@ -189,6 +189,44 @@ export const AboutView: React.FC<AboutViewProps> = ({
             />
           </motion.div>
           </Reveal>
+        </div>
+      </section>
+
+      {/* Our Team (target of the About > Our Team dropdown link) */}
+      <section id="team" className="scroll-mt-32 py-12 sm:py-20 bg-white border-t border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Reveal direction="up" className="text-center max-w-2xl mx-auto mb-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-xs font-bold uppercase tracking-widest text-blue-700 mb-4">
+              <Users className="w-3.5 h-3.5" /> Our Team
+            </div>
+            <h2 className="text-2xl min-[400px]:text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+              The people behind every project
+            </h2>
+            <p className="mt-3 text-base text-slate-600 leading-relaxed">
+              Art and engineering under one roof: an in-house team that takes a project from the first sketch to the final handover.
+            </p>
+          </Reveal>
+          <StaggerGroup className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              { icon: Building2, title: 'Architects', text: 'Concepts and plans shaped around how you want to live and work.' },
+              { icon: Ruler, title: 'Structural Engineers', text: 'Safe, durable structures engineered to stand the test of time.' },
+              { icon: Box, title: '2D & 3D Designers', text: 'Detailed drawings and realistic 3D views before work begins.' },
+              { icon: HardHat, title: 'Construction Crew', text: 'Skilled site teams delivering to quality, time and cost.' },
+            ].map(({ icon: Icon, title, text }) => (
+              <StaggerItem key={title}>
+                <motion.div
+                  whileHover={{ y: -6 }}
+                  className="group h-full bg-slate-50 rounded-2xl border border-slate-200 hover:border-blue-400 p-6 shadow-sm hover:shadow-lg transition-all duration-300"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-blue-50 group-hover:bg-blue-600 text-blue-700 group-hover:text-white border border-blue-100 flex items-center justify-center mb-4 transition-colors duration-300">
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-1.5">{title}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">{text}</p>
+                </motion.div>
+              </StaggerItem>
+            ))}
+          </StaggerGroup>
         </div>
       </section>
 

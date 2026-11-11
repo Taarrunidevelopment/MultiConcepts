@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Menu, X, Phone, Mail } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Menu, X, Phone, Mail, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { COMPANY_INFO } from '../data/websiteData';
 import { SmartImage } from './Effects';
@@ -17,6 +17,10 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [aboutMenuOpen, setAboutMenuOpen] = useState(false); // desktop About dropdown
+  const [mobileAboutOpen, setMobileAboutOpen] = useState(false); // mobile About accordion
+  const aboutRef = useRef<HTMLDivElement | null>(null);
+  const closeTimer = useRef<number | null>(null);
 
   useEffect(() => {
     // Header stays pinned at all times; only add a shadow once the page scrolls.
@@ -25,6 +29,29 @@ export const Header: React.FC<HeaderProps> = ({
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Close the About dropdown on outside click / Escape
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (aboutRef.current && !aboutRef.current.contains(e.target as Node)) setAboutMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setAboutMenuOpen(false);
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, []);
+
+  const openAbout = () => {
+    if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    setAboutMenuOpen(true);
+  };
+  const closeAboutSoon = () => {
+    if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    closeTimer.current = window.setTimeout(() => setAboutMenuOpen(false), 150);
+  };
 
   const navItems = [
     { id: 'home', label: 'Home' },
@@ -39,6 +66,24 @@ export const Header: React.FC<HeaderProps> = ({
     onSelectTab(tabId);
     setMobileMenuOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Go to the About page, then scroll to the Team section once it has rendered
+  const handleTeamClick = () => {
+    setAboutMenuOpen(false);
+    setMobileMenuOpen(false);
+    setMobileAboutOpen(false);
+    onSelectTab('about');
+    let tries = 0;
+    const tryScroll = () => {
+      const el = document.getElementById('team');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else if (tries++ < 30) {
+        window.setTimeout(tryScroll, 100);
+      }
+    };
+    window.setTimeout(tryScroll, 450); // wait for the page transition
   };
 
   return (
@@ -113,6 +158,66 @@ export const Header: React.FC<HeaderProps> = ({
           <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
             {navItems.map((item) => {
               const isActive = currentTab === item.id;
+              if (item.id === 'about') {
+                return (
+                  <div
+                    key={item.id}
+                    ref={aboutRef}
+                    className="relative"
+                    onMouseEnter={openAbout}
+                    onMouseLeave={closeAboutSoon}
+                  >
+                    <motion.button
+                      initial={{ opacity: 0, y: -14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.45, delay: 0.25 + navItems.indexOf(item) * 0.07, ease: 'easeOut' }}
+                      onClick={() => { setAboutMenuOpen(false); handleNavClick('about'); }}
+                      aria-haspopup="menu"
+                      aria-expanded={aboutMenuOpen}
+                      className={`relative px-2.5 xl:px-4 py-2 text-sm font-medium transition-all duration-300 rounded-xl whitespace-nowrap cursor-pointer group inline-flex items-center gap-1 ${
+                        isActive
+                          ? 'text-blue-700 font-semibold'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 hover:scale-105 active:scale-95'
+                      }`}
+                    >
+                      <span className="relative z-10">{item.label}</span>
+                      <ChevronDown
+                        className={`relative z-10 w-3.5 h-3.5 transition-transform duration-200 ${aboutMenuOpen ? 'rotate-180' : ''}`}
+                      />
+                      {isActive && (
+                        <motion.div
+                          layoutId="activeNavIndicator"
+                          className="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500 rounded-full shadow-xs"
+                          transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                        />
+                      )}
+                    </motion.button>
+
+                    <AnimatePresence>
+                      {aboutMenuOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 6, scale: 0.97 }}
+                          transition={{ duration: 0.16, ease: 'easeOut' }}
+                          role="menu"
+                          className="absolute left-0 top-full pt-2 z-50"
+                        >
+                          <div className="min-w-[190px] bg-white rounded-xl border border-slate-200 shadow-xl p-1.5">
+                            <button
+                              role="menuitem"
+                              onClick={handleTeamClick}
+                              className="w-full text-left px-3.5 py-2.5 text-sm font-medium text-slate-700 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                            >
+                              Our Team
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              }
               return (
                 <motion.button
                   key={item.id}
@@ -206,6 +311,55 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="px-4 pt-3 pb-6 space-y-1.5">
               {navItems.map((item, idx) => {
                 const isActive = currentTab === item.id;
+                if (item.id === 'about') {
+                  return (
+                    <div key={item.id}>
+                      <motion.div
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.04 }}
+                        className={`w-full flex items-stretch rounded-xl transition-all duration-200 ${
+                          isActive ? 'bg-blue-50 text-blue-700 font-semibold shadow-xs' : 'text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <button
+                          onClick={() => handleNavClick('about')}
+                          className="flex-1 text-left px-4 py-3 text-base font-medium cursor-pointer"
+                        >
+                          {item.label}
+                        </button>
+                        <button
+                          onClick={() => setMobileAboutOpen((o) => !o)}
+                          aria-label="Toggle About submenu"
+                          aria-expanded={mobileAboutOpen}
+                          className="px-4 cursor-pointer"
+                        >
+                          <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${mobileAboutOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                      </motion.div>
+                      <AnimatePresence initial={false}>
+                        {mobileAboutOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="ml-4 mt-1 pl-3 border-l-2 border-blue-100 space-y-1">
+                              <button
+                                onClick={handleTeamClick}
+                                className="w-full text-left px-4 py-2.5 text-[15px] font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-700 rounded-lg cursor-pointer"
+                              >
+                                Our Team
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                }
                 return (
                   <motion.button
                     key={item.id}
